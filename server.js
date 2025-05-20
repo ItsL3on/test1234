@@ -25,7 +25,6 @@ app.use(session({
     saveUninitialized: true
 }));
 
-// Middleware für Login
 function requireLogin(req, res, next) {
     if (req.session.loggedIn) {
         next();
@@ -34,12 +33,10 @@ function requireLogin(req, res, next) {
     }
 }
 
-// WebSocket
 io.on("connection", (socket) => {
     console.log("Client verbunden");
 });
 
-// Login-Routen
 app.get("/login", (req, res) => res.render("login"));
 app.post("/login", (req, res) => {
     const { username, password } = req.body;
@@ -55,7 +52,6 @@ app.get("/logout", (req, res) => {
     req.session.destroy(() => res.redirect("/login"));
 });
 
-// Hauptseite
 app.get("/", requireLogin, (req, res) => {
     const { user, event } = req.query;
     let query = "SELECT * FROM logs WHERE 1=1";
@@ -76,14 +72,28 @@ app.get("/", requireLogin, (req, res) => {
     });
 });
 
-// Webhook
+// ✅ Webhook mit Unterstützung für Jacksam / Discord Embeds
 app.post("/webhook", (req, res) => {
-    const log = {
-        timestamp: new Date().toISOString(),
-        event: req.body.event || "Unbekanntes Event",
-        user: req.body.user || "Unbekannter Spieler",
-        details: req.body.details || ""
-    };
+    let log;
+
+    // Jacksam / Discord Embed Format
+    if (req.body.embeds && Array.isArray(req.body.embeds)) {
+        const embed = req.body.embeds[0];
+        log = {
+            timestamp: embed.timestamp || new Date().toISOString(),
+            event: embed.title || "Unbenanntes Event",
+            user: req.body.username || "Job Creator",
+            details: embed.description || ""
+        };
+    } else {
+        // Standardformat
+        log = {
+            timestamp: new Date().toISOString(),
+            event: req.body.event || "Unbekanntes Event",
+            user: req.body.user || "Unbekannter Spieler",
+            details: req.body.details || ""
+        };
+    }
 
     db.run("INSERT INTO logs (timestamp, event, user, details) VALUES (?, ?, ?, ?)",
         [log.timestamp, log.event, log.user, log.details], (err) => {
