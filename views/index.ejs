@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>GTA RP Logs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="max-w-5xl mx-auto p-4">
+    <div class="flex justify-between items-center mb-4">
+      <h1 class="text-2xl font-bold">📜 GTA RP Logs</h1>
+      <a href="/logout" class="text-red-400 hover:underline">Logout</a>
+    </div>
+
+    <form method="get" class="flex flex-wrap gap-2 mb-4">
+      <input name="user" value="<%= user %>" placeholder="Spieler filtern" class="p-2 rounded bg-gray-800 border border-gray-600" />
+      <input name="event" value="<%= event %>" placeholder="Eventtyp filtern" class="p-2 rounded bg-gray-800 border border-gray-600" />
+      <button type="submit" class="bg-blue-600 px-4 py-2 rounded hover:bg-blue-700">🔍 Filtern</button>
+    </form>
+
+    <div id="logs" class="space-y-2">
+      <% logs.forEach(log => { %>
+        <div class="bg-gray-800 p-3 rounded shadow">
+          <div class="text-sm text-gray-400"><%= new Date(log.timestamp).toLocaleTimeString() %></div>
+          <div class="text-lg font-semibold">📝 [<%= log.event %>]</div>
+          <div>👤 <%= log.user %></div>
+          <div class="text-sm text-gray-300"><%= log.details %></div>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+
+  <script>
+    const socket = io();
+    const logsContainer = document.getElementById("logs");
+    socket.on("newLog", (log) => {
+      const logElement = document.createElement("div");
+      logElement.className = "bg-gray-800 p-3 rounded shadow";
+      logElement.innerHTML = \`
+        <div class="text-sm text-gray-400">\${new Date(log.timestamp).toLocaleTimeString()}</div>
+        <div class="text-lg font-semibold">📝 [\${log.event}]</div>
+        <div>👤 \${log.user}</div>
+        <div class="text-sm text-gray-300">\${log.details}</div>
+      \`;
+      logsContainer.prepend(logElement);
+    });
+  </script>
+</body>
+</html>
